@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TALK · Coffee</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 30px 20px;
+            background: radial-gradient(ellipse at 30% 20%, #f7f2ec, #e8e0d8 70%, #ddd5cc);
+            font-family: 'Georgia', 'Times New Roman', serif;
+            color: #3d3a37;
+        }
+
+        .container {
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 0 25px;
+            border-bottom: 1px solid rgba(150, 140, 130, 0.25);
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-family: 'Helvetica Neue', 'Arial', sans-serif;
+            font-size: 4.2rem;
+            font-weight: 300;
+            letter-spacing: 14px;
+            color: #8a8078;
+            text-transform: uppercase;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.6);
+            line-height: 1;
+        }
+
+        .logo-sub {
+            font-family: 'Helvetica Neue', 'Arial', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 8px;
+            color: #b5aba0;
+            text-transform: uppercase;
+            margin-top: 4px;
+            font-weight: 300;
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(150, 140, 130, 0.3);
+            color: #6a6258;
+            padding: 6px 24px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            letter-spacing: 2.5px;
+            transition: 0.3s;
+            border-radius: 30px;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            text-transform: uppercase;
+            font-weight: 400;
+        }
+
+        .btn:hover {
+            background: #8a8078;
+            color: #f5f0eb;
+            border-color: #8a8078;
+            box-shadow: 0 4px 20px rgba(138, 128, 120, 0.2);
+        }
+
+        .btn-danger {
+            border-color: rgba(180, 130, 120, 0.4);
+            color: #a08078;
+        }
+
+        .btn-danger:hover {
+            background: #a08078;
+            color: #f5f0eb;
+            border-color: #a08078;
+        }
+
+        .categories {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px 28px;
+            margin-bottom: 28px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid rgba(150, 140, 130, 0.2);
+        }
+
+        .category-tag {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: #b5aba0;
+            cursor: pointer;
+            transition: 0.25s;
+            padding: 4px 0;
+            border-bottom: 2px solid transparent;
+            font-weight: 400;
+        }
+
+        .category-tag.active {
+            color: #5a5048;
+            border-bottom-color: #8a8078;
+            font-weight: 500;
+        }
+
+        .category-tag:hover {
+            color: #6a6258;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 28px;
+            margin-bottom: 40px;
+        }
+
+        .menu-item {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 18px;
+            padding: 18px 18px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 6px 30px rgba(138, 128, 120, 0.08);
+            transition: 0.35s ease;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 45px rgba(138, 128, 120, 0.13);
+            background: rgba(255, 255, 255, 0.85);
+        }
+
+        .menu-item img {
+            width: 100%;
+            height: 190px;
+            object-fit: cover;
+            border-radius: 12px;
+            background: #ede8e2;
+            margin-bottom: 12px;
+        }
+
+        .menu-item .no-img {
+            height: 190px;
+            background: #ede8e2;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #c8c0b8;
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin-bottom: 12px;
+        }
+
+        .menu-item h3 {
+            font-size: 1.15rem;
+            font-weight: 400;
+            color: #3d3a37;
+            letter-spacing: 0.5px;
+        }
+
+        .menu-item .price {
+            font-size: 1.25rem;
+            font-weight: 300;
+            color: #8a8078;
+            margin: 2px 0 4px;
+        }
+
+        .menu-item .desc {
+            color: #b5aba0;
+            font-size: 0.82rem;
+            font-style: italic;
+        }
+
+        .menu-item .category-badge {
+            display: inline-block;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 0.55rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #b5aba0;
+            background: rgba(200, 192, 184, 0.25);
+            padding: 2px 14px;
+            border-radius: 20px;
+            margin-top: 8px;
+        }
+
+        .qr-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(8px);
+            padding: 22px 28px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            margin: 15px 0 25px;
+        }
+
+        #qrcode {
+            background: white;
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(200, 192, 184, 0.3);
+        }
+
+        .qr-link {
+            color: #8a8078;
+            font-size: 0.75rem;
+            word-break: break-all;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .admin-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 28px 30px;
+            margin-top: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .admin-panel h2 {
+            font-weight: 300;
+            letter-spacing: 4px;
+            color: #8a8078;
+            font-size: 1.1rem;
+            border-bottom: 1px solid rgba(200, 192, 184, 0.3);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .form-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(200, 192, 184, 0.3);
+            color: #3d3a37;
+            padding: 10px 18px;
+            border-radius: 30px;
+            flex: 1 1 170px;
+            font-size: 0.85rem;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            backdrop-filter: blur(4px);
+        }
+
+        .form-group textarea {
+            flex: 1 1 100%;
+            min-height: 56px;
+            border-radius: 16px;
+        }
+
+        .form-group input[type="file"] {
+            padding: 8px 14px;
+            border: none;
+            background: transparent;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .admin-item {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.4);
+            padding: 6px 16px 6px 20px;
+            margin-bottom: 5px;
+            border-radius: 30px;
+            border-left: 3px solid #c8c0b8;
+        }
+
+        .admin-item span {
+            flex: 1;
+            font-size: 0.85rem;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .footer-actions {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 18px;
+        }
+
+        @media (max-width: 600px) {
+            .logo { font-size: 2.8rem; letter-spacing: 8px; }
+            .header-actions { gap: 10px; }
+            .btn { font-size: 0.6rem; padding: 5px 16px; }
+            .menu-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
+        }
+
+        @media (max-width: 420px) {
+            .menu-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <div class="logo">TALK</div>
+        <div class="logo-sub">· coffee ·</div>
+        <div class="header-actions">
+            <button class="btn" id="toggleAdminBtn">Manage</button>
+            <button class="btn" id="copyLinkBtn">Copy link</button>
+        </div>
+    </div>
+
+    <div class="categories" id="categoriesContainer"></div>
+
+    <div id="menuGrid" class="menu-grid"></div>
+
+    <div class="qr-section">
+        <div id="qrcode"></div>
+        <div style="text-align:center;">
+            <p style="color:#b5aba0;font-size:0.6rem;letter-spacing:3px;text-transform:uppercase;font-family:'Helvetica Neue',Arial,sans-serif;">Menu QR code</p>
+            <button class="btn" id="downloadQrBtn">Download QR</button>
+            <p class="qr-link" id="qrLinkDisplay"></p>
+        </div>
+    </div>
+
+    <div id="adminPanel" class="admin-panel hidden">
+        <h2>Menu management</h2>
+        <div class="form-group">
+            <input type="password" id="adminPass" placeholder="Password" value="talk123" />
+            <button class="btn" id="loginAdminBtn">Login</button>
+            <button class="btn btn-danger" id="logoutAdminBtn">Logout</button>
+        </div>
+        <div id="adminContent" class="hidden">
+            <div class="form-group">
+                <input type="text" id="itemName" placeholder="Item name" />
+                <input type="text" id="itemPrice" placeholder="Price" />
+                <input type="text" id="itemCategory" placeholder="Category" />
+            </div>
+            <div class="form-group">
+                <textarea id="itemDesc" placeholder="Description"></textarea>
+            </div>
+            <div class="form-group">
+                <input type="file" id="itemImage" accept="image/*" />
+            </div>
+            <button class="btn" id="addItemBtn" style="margin-bottom:18px;">+ Add item</button>
+            <div id="adminItemList"></div>
+        </div>
+    </div>
+
+    <div class="footer-actions">
+        <button class="btn btn-danger" id="resetMenuBtn">Reset menu</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        let menuItems = [];
+        let currentCategory = 'All';
+        let isAdmin = false;
+
+        const grid = document.getElementById('menuGrid');
+        const categoriesContainer = document.getElementById('categoriesContainer');
+        const adminPanel = document.getElementById('adminPanel');
+        const adminContent = document.getElementById('adminContent');
+        const toggleAdminBtn = document.getElementById('toggleAdminBtn');
+        const loginAdminBtn = document.getElementById('loginAdminBtn');
+        const logoutAdminBtn = document.getElementById('logoutAdminBtn');
+        const adminPass = document.getElementById('adminPass');
+        const addItemBtn = document.getElementById('addItemBtn');
+        const itemName = document.getElementById('itemName');
+        const itemPrice = document.getElementById('itemPrice');
+        const itemCategory = document.getElementById('itemCategory');
+        const itemDesc = document.getElementById('itemDesc');
+        const itemImage = document.getElementById('itemImage');
+        const adminItemList = document.getElementById('adminItemList');
+        const resetMenuBtn = document.getElementById('resetMenuBtn');
+        const copyLinkBtn = document.getElementById('copyLinkBtn');
+        const downloadQrBtn = document.getElementById('downloadQrBtn');
+        const qrLinkDisplay = document.getElementById('qrLinkDisplay');
+
+        function loadData() {
+            const stored = localStorage.getItem('talk_menu_items');
+            if (stored) {
+                try { menuItems = JSON.parse(stored); } catch(e) { menuItems = []; }
+            } else {
+                menuItems = [
+                    { id: Date.now() + 1, name: 'Espresso', price: '150 ?', category: 'Coffee', desc: 'Classic black', image: '' },
+                    { id: Date.now() + 2, name: 'Cappuccino', price: '220 ?', category: 'Coffee', desc: 'Smooth with milk', image: '' },
+                    { id: Date.now() + 3, name: 'Croissant', price: '180 ?', category: 'Pastry', desc: 'Buttery and flaky', image: '' }
+                ];
+                saveData();
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('talk_menu_items', JSON.stringify(menuItems));
+            renderAll();
+        }
+
+        function renderCategories() {
+            const cats = ['All', ...new Set(menuItems.map(i => i.category).filter(Boolean))];
+            categoriesContainer.innerHTML = cats.map(c =>
+                `<span class="category-tag ${c === currentCategory ? 'active' : ''}" data-cat="${c}">${c}</span>`
+            ).join('');
+            categoriesContainer.querySelectorAll('.category-tag').forEach(el => {
+                el.addEventListener('click', () => {
+                    currentCategory = el.dataset.cat;
+                    renderAll();
+                });
+            });
+        }
+
+        function renderMenu() {
+            const filtered = currentCategory === 'All' ? menuItems : menuItems.filter(i => i.category === currentCategory);
+            if (!filtered.length) {
+                grid.innerHTML = '<p style="text-align:center;color:#c8c0b8;padding:40px;font-family:\'Helvetica Neue\',Arial,sans-serif;letter-spacing:2px;">Menu is empty</p>';
+                return;
+            }
+            grid.innerHTML = filtered.map(item => `
+                <div class="menu-item">
+                    ${item.image ? `<img src="${item.image}" alt="${item.name}" />` : `<div class="no-img">no photo</div>`}
+                    <h3>${item.name}</h3>
+                    <div class="price">${item.price}</div>
+                    <div class="desc">${item.desc || ''}</div>
+                    <span class="category-badge">${item.category || 'Uncategorized'}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderAdminList() {
+            if (!isAdmin) { adminItemList.innerHTML = ''; return; }
+            adminItemList.innerHTML = menuItems.map((item, idx) => `
+                <div class="admin-item">
+                    <span>${item.name} — ${item.price}</span>
+                    <button class="btn btn-danger" data-idx="${idx}" style="padding:2px 14px;font-size:0.6rem;">?</button>
+                </div>
+            `).join('');
+            adminItemList.querySelectorAll('[data-idx]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const idx = parseInt(btn.dataset.idx);
+                    menuItems.splice(idx, 1);
+                    saveData();
+                    renderAll();
+                });
+            });
+        }
+
+        function renderQR() {
+            const url = window.location.href;
+            qrLinkDisplay.textContent = url;
+            const container = document.getElementById('qrcode');
+            container.innerHTML = '';
+            if (typeof QRCode !== 'undefined') {
+                new QRCode(container, {
+                    text: url,
+                    width: 160,
+                    height: 160,
+                    colorDark: '#5a5048',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            }
+        }
+
+        function renderAll() {
+            renderCategories();
+            renderMenu();
+            renderAdminList();
+            renderQR();
+        }
+
+        function setAdmin(state) {
+            isAdmin = state;
+            if (state) {
+                adminContent.classList.remove('hidden');
+                adminPanel.classList.remove('hidden');
+                toggleAdminBtn.textContent = 'Manage (on)';
+                renderAdminList();
+            } else {
+                adminContent.classList.add('hidden');
+                adminPanel.classList.add('hidden');
+                toggleAdminBtn.textContent = 'Manage';
+            }
+        }
+
+        toggleAdminBtn.addEventListener('click', () => {
+            if (isAdmin) { setAdmin(false); return; }
+            adminPanel.classList.remove('hidden');
+            if (adminPass.value === 'talk123') setAdmin(true);
+            else alert('Wrong password');
+        });
+
+        loginAdminBtn.addEventListener('click', () => {
+            if (adminPass.value === 'talk123') setAdmin(true);
+            else alert('Wrong password');
+        });
+
+        logoutAdminBtn.addEventListener('click', () => setAdmin(false));
+
+        addItemBtn.addEventListener('click', () => {
+            if (!isAdmin) return alert('Please login first');
+            const name = itemName.value.trim();
+            const price = itemPrice.value.trim();
+            const category = itemCategory.value.trim() || 'Uncategorized';
+            const desc = itemDesc.value.trim();
+            const file = itemImage.files[0];
+            if (!name || !price) return alert('Name and price are required');
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                menuItems.push({ id: Date.now(), name, price, category, desc, image: e.target.result || '' });
+                saveData();
+                itemName.value = ''; itemPrice.value = ''; itemCategory.value = ''; itemDesc.value = ''; itemImage.value = '';
+                renderAll();
+            };
+            if (file) reader.readAsDataURL(file);
+            else {
+                menuItems.push({ id: Date.now(), name, price, category, desc, image: '' });
+                saveData();
+                itemName.value = ''; itemPrice.value = ''; itemCategory.value = ''; itemDesc.value = ''; itemImage.value = '';
+                renderAll();
+            }
+        });
+
+        resetMenuBtn.addEventListener('click', () => {
+            if (confirm('Delete all menu items?')) { menuItems = []; saveData(); renderAll(); }
+        });
+
+        copyLinkBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(window.location.href).then(() => alert('Link copied!'));
+        });
+
+        downloadQrBtn.addEventListener('click', () => {
+            const canvas = document.querySelector('#qrcode canvas');
+            if (canvas) {
+                const link = document.createElement('a');
+                link.download = 'talk-qr.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+        });
+
+        loadData();
+        setAdmin(false);
+        renderAll();
+    })();
+</script>
+</body>
+</html>
