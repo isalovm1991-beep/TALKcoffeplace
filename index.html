@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TALK � Coffee</title>
+    <title>TALK · Coffee</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         * {
@@ -231,10 +231,7 @@
         }
 
         .qr-link {
-            color: #8a8078;
-            font-size: 0.75rem;
-            word-break: break-all;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
+            display: none; /* 👈 СКРЫВАЕМ ССЫЛКУ */
         }
 
         .admin-panel {
@@ -336,7 +333,7 @@
 
     <div class="header">
         <div class="logo">TALK</div>
-        <div class="logo-sub">� coffee �</div>
+        <div class="logo-sub">· coffee ·</div>
         <div class="header-actions">
             <button class="btn" id="toggleAdminBtn">Manage</button>
             <button class="btn" id="copyLinkBtn">Copy link</button>
@@ -352,6 +349,7 @@
         <div style="text-align:center;">
             <p style="color:#b5aba0;font-size:0.6rem;letter-spacing:3px;text-transform:uppercase;font-family:'Helvetica Neue',Arial,sans-serif;">Menu QR code</p>
             <button class="btn" id="downloadQrBtn">Download QR</button>
+            <!-- ССЫЛКА СКРЫТА -->
             <p class="qr-link" id="qrLinkDisplay"></p>
         </div>
     </div>
@@ -417,9 +415,9 @@
                 try { menuItems = JSON.parse(stored); } catch(e) { menuItems = []; }
             } else {
                 menuItems = [
-                    { id: Date.now() + 1, name: 'Espresso', price: '150 ?', category: 'Coffee', desc: 'Classic black', image: '' },
-                    { id: Date.now() + 2, name: 'Cappuccino', price: '220 ?', category: 'Coffee', desc: 'Smooth with milk', image: '' },
-                    { id: Date.now() + 3, name: 'Croissant', price: '180 ?', category: 'Pastry', desc: 'Buttery and flaky', image: '' }
+                    { id: Date.now() + 1, name: 'Espresso', price: '150 ₽', category: 'Coffee', desc: 'Classic black', image: '' },
+                    { id: Date.now() + 2, name: 'Cappuccino', price: '220 ₽', category: 'Coffee', desc: 'Smooth with milk', image: '' },
+                    { id: Date.now() + 3, name: 'Croissant', price: '180 ₽', category: 'Pastry', desc: 'Buttery and flaky', image: '' }
                 ];
                 saveData();
             }
@@ -464,8 +462,8 @@
             if (!isAdmin) { adminItemList.innerHTML = ''; return; }
             adminItemList.innerHTML = menuItems.map((item, idx) => `
                 <div class="admin-item">
-                    <span>${item.name} � ${item.price}</span>
-                    <button class="btn btn-danger" data-idx="${idx}" style="padding:2px 14px;font-size:0.6rem;">?</button>
+                    <span>${item.name} — ${item.price}</span>
+                    <button class="btn btn-danger" data-idx="${idx}" style="padding:2px 14px;font-size:0.6rem;">×</button>
                 </div>
             `).join('');
             adminItemList.querySelectorAll('[data-idx]').forEach(btn => {
@@ -480,6 +478,7 @@
 
         function renderQR() {
             const url = window.location.href;
+            // Ссылка теперь скрыта, но QR-код всё равно генерируется
             qrLinkDisplay.textContent = url;
             const container = document.getElementById('qrcode');
             container.innerHTML = '';
