@@ -289,6 +289,37 @@
             margin-top: 18px;
         }
 
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(60, 60, 60, 0.9);
+            color: #fff;
+            padding: 12px 28px;
+            border-radius: 30px;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            backdrop-filter: blur(8px);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: rgba(60, 120, 80, 0.9);
+        }
+
+        .toast.error {
+            background: rgba(180, 70, 60, 0.9);
+        }
+
         @media (max-width: 600px) {
             .logo { font-size: 2.8rem; letter-spacing: 8px; padding: 8px 16px; }
             .menu-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -309,7 +340,9 @@
 
     <div class="categories" id="categoriesContainer"></div>
 
-    <div id="menuGrid" class="menu-grid"></div>
+    <div id="menuGrid" class="menu-grid">
+        <div style="text-align:center;color:#b5aba0;padding:40px;width:100%;">Загрузка меню...</div>
+    </div>
 
     <div class="qr-section">
         <div id="qrcode"></div>
@@ -328,6 +361,15 @@
             <button class="btn btn-danger" id="logoutAdminBtn">Выйти</button>
         </div>
         <div id="adminContent" class="hidden">
+            <!-- Токен GitHub (вводится один раз) -->
+            <div class="form-group" style="margin-bottom:15px;">
+                <input type="password" id="githubToken" placeholder="GitHub токен (введите один раз)" style="flex:2;" />
+                <button class="btn" id="saveTokenBtn">Сохранить токен</button>
+            </div>
+            <div style="font-size:0.7rem;color:#b5aba0;margin-bottom:15px;font-family:'Helvetica Neue',Arial,sans-serif;">
+                Токен нужен для сохранения меню на GitHub. Он хранится только в вашем браузере.
+            </div>
+
             <div class="form-group">
                 <input type="text" id="itemName" placeholder="Название" />
                 <input type="text" id="itemPrice" placeholder="Цена" />
@@ -349,14 +391,23 @@
     </div>
 </div>
 
+<!-- Всплывающее уведомление -->
+<div id="toast" class="toast"></div>
+
 <script>
     (function() {
+        // === НАСТРОЙКИ ===
+        const REPO_OWNER = 'isalovm1991-beep';
+        const REPO_NAME = 'TALKcoffeplace';
+        const FILE_PATH = 'menu.json';
+        const BRANCH = 'main';
+
         let menuItems = [];
         let currentCategory = 'Все';
         let isAdmin = false;
-        let clickCount = 0;
-        let clickTimer = null;
+        let githubToken = localStorage.getItem('talk_github_token') || '';
 
+        // DOM
         const grid = document.getElementById('menuGrid');
         const categoriesContainer = document.getElementById('categoriesContainer');
         const adminPanel = document.getElementById('adminPanel');
@@ -365,6 +416,8 @@
         const loginAdminBtn = document.getElementById('loginAdminBtn');
         const logoutAdminBtn = document.getElementById('logoutAdminBtn');
         const adminPass = document.getElementById('adminPass');
+        const githubTokenInput = document.getElementById('githubToken');
+        const saveTokenBtn = document.getElementById('saveTokenBtn');
         const addItemBtn = document.getElementById('addItemBtn');
         const itemName = document.getElementById('itemName');
         const itemPrice = document.getElementById('itemPrice');
@@ -375,37 +428,104 @@
         const resetMenuBtn = document.getElementById('resetMenuBtn');
         const downloadQrBtn = document.getElementById('downloadQrBtn');
         const qrLinkDisplay = document.getElementById('qrLinkDisplay');
+        const toast = document.getElementById('toast');
 
-        // === ДВОЙНОЙ КЛИК ПО ЛОГОТИПУ ===
-        logoTrigger.addEventListener('dblclick', function(e) {
-            e.preventDefault();
-            adminPanel.classList.remove('hidden');
-            adminPass.focus();
-            // Если уже админ — просто показываем панель
-            if (isAdmin) {
-                adminContent.classList.remove('hidden');
-            }
-        });
+        let toastTimer = null;
 
-        function loadData() {
-            const stored = localStorage.getItem('talk_menu_items');
-            if (stored) {
-                try { menuItems = JSON.parse(stored); } catch(e) { menuItems = []; }
-            } else {
-                menuItems = [
-                    { id: Date.now() + 1, name: 'Эспрессо', price: '150 ₽', category: 'Кофе', desc: 'Классический черный', image: '' },
-                    { id: Date.now() + 2, name: 'Капучино', price: '220 ₽', category: 'Кофе', desc: 'Нежный, с молоком', image: '' },
-                    { id: Date.now() + 3, name: 'Круассан', price: '180 ₽', category: 'Выпечка', desc: 'Масляный, хрустящий', image: '' }
-                ];
-                saveData();
+        // === TOAST УВЕДОМЛЕНИЯ ===
+        function showToast(message, type = 'info') {
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            // Небольшая задержка перед показом, чтобы анимация сработала
+            setTimeout(() => { toast.classList.add('show'); }, 10);
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        // === ЗАГРУЗКА МЕНЮ С GITHUB ===
+        async function loadMenuFromGitHub() {
+            try {
+                const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
+                const response = await fetch(url);
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        showToast('Файл menu.json не найден. Создайте его в репозитории.', 'error');
+                    } else {
+                        showToast('Ошибка загрузки: ' + response.status, 'error');
+                    }
+                    return false;
+                }
+                const data = await response.json();
+                const content = atob(data.content);
+                menuItems = JSON.parse(content);
+                return true;
+            } catch (e) {
+                showToast('Ошибка загрузки меню: ' + e.message, 'error');
+                return false;
             }
         }
 
-        function saveData() {
-            localStorage.setItem('talk_menu_items', JSON.stringify(menuItems));
-            renderAll();
+        // === СОХРАНЕНИЕ МЕНЮ НА GITHUB ===
+        async function saveMenuToGitHub() {
+            if (!githubToken) {
+                showToast('Введите GitHub токен в админке', 'error');
+                return false;
+            }
+
+            try {
+                // Сначала получаем sha текущего файла
+                const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
+                const getResponse = await fetch(url, {
+                    headers: {
+                        'Authorization': `token ${githubToken}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+
+                if (!getResponse.ok) {
+                    showToast('Ошибка при получении файла: ' + getResponse.status, 'error');
+                    return false;
+                }
+
+                const fileData = await getResponse.json();
+                const sha = fileData.sha;
+
+                // Подготавливаем новое содержимое
+                const content = btoa(JSON.stringify(menuItems, null, 2));
+
+                // Отправляем обновление
+                const putResponse = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${githubToken}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: 'Обновление меню',
+                        content: content,
+                        sha: sha,
+                        branch: BRANCH
+                    })
+                });
+
+                if (!putResponse.ok) {
+                    const errData = await putResponse.json();
+                    showToast('Ошибка сохранения: ' + (errData.message || putResponse.status), 'error');
+                    return false;
+                }
+
+                showToast('Меню сохранено на GitHub! ✅', 'success');
+                return true;
+            } catch (e) {
+                showToast('Ошибка: ' + e.message, 'error');
+                return false;
+            }
         }
 
+        // === RENDER ===
         function renderCategories() {
             const cats = ['Все', ...new Set(menuItems.map(i => i.category).filter(Boolean))];
             categoriesContainer.innerHTML = cats.map(c =>
@@ -438,6 +558,10 @@
 
         function renderAdminList() {
             if (!isAdmin) { adminItemList.innerHTML = ''; return; }
+            if (!menuItems.length) {
+                adminItemList.innerHTML = '<p style="color:#b5aba0;font-size:0.8rem;">Меню пусто. Добавьте первую позицию.</p>';
+                return;
+            }
             adminItemList.innerHTML = menuItems.map((item, idx) => `
                 <div class="admin-item">
                     <span>${item.name} — ${item.price}</span>
@@ -445,10 +569,11 @@
                 </div>
             `).join('');
             adminItemList.querySelectorAll('[data-idx]').forEach(btn => {
-                btn.addEventListener('click', () => {
+                btn.addEventListener('click', async () => {
                     const idx = parseInt(btn.dataset.idx);
+                    if (!confirm(`Удалить "${menuItems[idx].name}"?`)) return;
                     menuItems.splice(idx, 1);
-                    saveData();
+                    await saveMenuToGitHub();
                     renderAll();
                 });
             });
@@ -478,11 +603,13 @@
             renderQR();
         }
 
+        // === ADMIN ===
         function setAdmin(state) {
             isAdmin = state;
             if (state) {
                 adminContent.classList.remove('hidden');
                 adminPanel.classList.remove('hidden');
+                githubTokenInput.value = githubToken;
                 renderAdminList();
             } else {
                 adminContent.classList.add('hidden');
@@ -490,45 +617,118 @@
             }
         }
 
+        // === СОБЫТИЯ ===
+
+        // Двойной клик по логотипу
+        logoTrigger.addEventListener('dblclick', function(e) {
+            e.preventDefault();
+            adminPanel.classList.remove('hidden');
+            adminPass.focus();
+            if (isAdmin) {
+                adminContent.classList.remove('hidden');
+            }
+        });
+
+        // Вход
         loginAdminBtn.addEventListener('click', () => {
             if (adminPass.value === 'talk123') {
                 setAdmin(true);
             } else {
-                alert('Неверный пароль');
+                showToast('Неверный пароль', 'error');
             }
         });
 
+        // Выход
         logoutAdminBtn.addEventListener('click', () => setAdmin(false));
 
-        addItemBtn.addEventListener('click', () => {
-            if (!isAdmin) return alert('Сначала войдите в управление');
+        // Сохранение токена
+        saveTokenBtn.addEventListener('click', () => {
+            const token = githubTokenInput.value.trim();
+            if (token.startsWith('ghp_') && token.length > 30) {
+                githubToken = token;
+                localStorage.setItem('talk_github_token', token);
+                showToast('Токен сохранён ✅', 'success');
+            } else {
+                showToast('Неверный формат токена. Должен начинаться с ghp_', 'error');
+            }
+        });
+
+        // Добавление позиции
+        addItemBtn.addEventListener('click', async () => {
+            if (!isAdmin) {
+                showToast('Сначала войдите в управление', 'error');
+                return;
+            }
+            if (!githubToken) {
+                showToast('Введите GitHub токен', 'error');
+                return;
+            }
+
             const name = itemName.value.trim();
             const price = itemPrice.value.trim();
             const category = itemCategory.value.trim() || 'Без категории';
             const desc = itemDesc.value.trim();
             const file = itemImage.files[0];
-            if (!name || !price) return alert('Название и цена обязательны');
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                menuItems.push({ id: Date.now(), name, price, category, desc, image: e.target.result || '' });
-                saveData();
-                itemName.value = ''; itemPrice.value = ''; itemCategory.value = ''; itemDesc.value = ''; itemImage.value = '';
-                renderAll();
+            if (!name || !price) {
+                showToast('Название и цена обязательны', 'error');
+                return;
+            }
+
+            const newItem = {
+                id: Date.now(),
+                name,
+                price,
+                category,
+                desc,
+                image: ''
             };
-            if (file) reader.readAsDataURL(file);
-            else {
-                menuItems.push({ id: Date.now(), name, price, category, desc, image: '' });
-                saveData();
-                itemName.value = ''; itemPrice.value = ''; itemCategory.value = ''; itemDesc.value = ''; itemImage.value = '';
-                renderAll();
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    newItem.image = e.target.result;
+                    menuItems.push(newItem);
+                    const saved = await saveMenuToGitHub();
+                    if (saved) {
+                        itemName.value = ''; itemPrice.value = ''; itemCategory.value = ''; itemDesc.value = ''; itemImage.value = '';
+                        renderAll();
+                    } else {
+                        // Если сохранение не удалось — убираем добавленный элемент
+                        menuItems.pop();
+                        renderAll();
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else {
+                menuItems.push(newItem);
+                const saved = await saveMenuToGitHub();
+                if (saved) {
+                    itemName.value = ''; itemPrice.value = ''; itemCategory.value = ''; itemDesc.value = ''; itemImage.value = '';
+                    renderAll();
+                } else {
+                    menuItems.pop();
+                    renderAll();
+                }
             }
         });
 
-        resetMenuBtn.addEventListener('click', () => {
-            if (confirm('Удалить всё меню?')) { menuItems = []; saveData(); renderAll(); }
+        // Enter в поле пароля
+        adminPass.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') loginAdminBtn.click();
         });
 
+        // Сброс меню
+        resetMenuBtn.addEventListener('click', async () => {
+            if (!isAdmin) { showToast('Сначала войдите в управление', 'error'); return; }
+            if (!confirm('Удалить ВСЁ меню?')) return;
+            menuItems = [];
+            await saveMenuToGitHub();
+            renderAll();
+            showToast('Меню очищено', 'info');
+        });
+
+        // Скачать QR
         downloadQrBtn.addEventListener('click', () => {
             const canvas = document.querySelector('#qrcode canvas');
             if (canvas) {
@@ -536,17 +736,31 @@
                 link.download = 'talk-qr.png';
                 link.href = canvas.toDataURL('image/png');
                 link.click();
+            } else {
+                showToast('QR-код ещё не загружен', 'error');
             }
         });
 
-        // Нажатие Enter в поле пароля
-        adminPass.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') loginAdminBtn.click();
-        });
+        // === ЗАПУСК ===
+        async function init() {
+            grid.innerHTML = '<div style="text-align:center;color:#b5aba0;padding:40px;width:100%;">Загрузка меню...</div>';
+            const loaded = await loadMenuFromGitHub();
+            if (loaded) {
+                renderAll();
+                showToast('Меню загружено ✅', 'success');
+            } else {
+                grid.innerHTML = '<div style="text-align:center;color:#b5aba0;padding:40px;width:100%;">Не удалось загрузить меню. Проверьте файл menu.json в репозитории.</div>';
+            }
+            renderQR();
+        }
 
-        loadData();
+        // Восстанавливаем токен из localStorage
+        if (githubToken) {
+            githubTokenInput.value = githubToken;
+        }
+
+        init();
         setAdmin(false);
-        renderAll();
     })();
 </script>
 </body>
