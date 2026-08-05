@@ -32,6 +32,7 @@
             padding: 20px 0 25px;
             border-bottom: 1px solid rgba(150, 140, 130, 0.25);
             margin-bottom: 30px;
+            cursor: default;
         }
 
         .logo {
@@ -43,6 +44,20 @@
             text-transform: uppercase;
             text-shadow: 0 1px 0 rgba(255,255,255,0.6);
             line-height: 1;
+            cursor: pointer;
+            user-select: none;
+            transition: 0.2s;
+            display: inline-block;
+            padding: 10px 30px;
+            border-radius: 20px;
+        }
+
+        .logo:hover {
+            background: rgba(138, 128, 120, 0.05);
+        }
+
+        .logo:active {
+            transform: scale(0.97);
         }
 
         .logo-sub {
@@ -53,48 +68,6 @@
             text-transform: uppercase;
             margin-top: 4px;
             font-weight: 300;
-        }
-
-        .header-actions {
-            display: flex;
-            justify-content: center;
-            gap: 14px;
-            flex-wrap: wrap;
-            margin-top: 16px;
-        }
-
-        .btn {
-            background: rgba(255, 255, 255, 0.5);
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(150, 140, 130, 0.3);
-            color: #6a6258;
-            padding: 6px 24px;
-            cursor: pointer;
-            font-size: 0.7rem;
-            letter-spacing: 2.5px;
-            transition: 0.3s;
-            border-radius: 30px;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            text-transform: uppercase;
-            font-weight: 400;
-        }
-
-        .btn:hover {
-            background: #8a8078;
-            color: #f5f0eb;
-            border-color: #8a8078;
-            box-shadow: 0 4px 20px rgba(138, 128, 120, 0.2);
-        }
-
-        .btn-danger {
-            border-color: rgba(180, 130, 120, 0.4);
-            color: #a08078;
-        }
-
-        .btn-danger:hover {
-            background: #a08078;
-            color: #f5f0eb;
-            border-color: #a08078;
         }
 
         .categories {
@@ -317,9 +290,7 @@
         }
 
         @media (max-width: 600px) {
-            .logo { font-size: 2.8rem; letter-spacing: 8px; }
-            .header-actions { gap: 10px; }
-            .btn { font-size: 0.6rem; padding: 5px 16px; }
+            .logo { font-size: 2.8rem; letter-spacing: 8px; padding: 8px 16px; }
             .menu-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
         }
 
@@ -332,12 +303,8 @@
 <div class="container">
 
     <div class="header">
-        <div class="logo">TALK</div>
+        <div class="logo" id="logoTrigger">TALK</div>
         <div class="logo-sub">· кофе ·</div>
-        <div class="header-actions">
-            <button class="btn" id="toggleAdminBtn">Управление</button>
-            <button class="btn" id="copyLinkBtn">Копировать ссылку</button>
-        </div>
     </div>
 
     <div class="categories" id="categoriesContainer"></div>
@@ -387,12 +354,14 @@
         let menuItems = [];
         let currentCategory = 'Все';
         let isAdmin = false;
+        let clickCount = 0;
+        let clickTimer = null;
 
         const grid = document.getElementById('menuGrid');
         const categoriesContainer = document.getElementById('categoriesContainer');
         const adminPanel = document.getElementById('adminPanel');
         const adminContent = document.getElementById('adminContent');
-        const toggleAdminBtn = document.getElementById('toggleAdminBtn');
+        const logoTrigger = document.getElementById('logoTrigger');
         const loginAdminBtn = document.getElementById('loginAdminBtn');
         const logoutAdminBtn = document.getElementById('logoutAdminBtn');
         const adminPass = document.getElementById('adminPass');
@@ -404,9 +373,19 @@
         const itemImage = document.getElementById('itemImage');
         const adminItemList = document.getElementById('adminItemList');
         const resetMenuBtn = document.getElementById('resetMenuBtn');
-        const copyLinkBtn = document.getElementById('copyLinkBtn');
         const downloadQrBtn = document.getElementById('downloadQrBtn');
         const qrLinkDisplay = document.getElementById('qrLinkDisplay');
+
+        // === ДВОЙНОЙ КЛИК ПО ЛОГОТИПУ ===
+        logoTrigger.addEventListener('dblclick', function(e) {
+            e.preventDefault();
+            adminPanel.classList.remove('hidden');
+            adminPass.focus();
+            // Если уже админ — просто показываем панель
+            if (isAdmin) {
+                adminContent.classList.remove('hidden');
+            }
+        });
 
         function loadData() {
             const stored = localStorage.getItem('talk_menu_items');
@@ -504,25 +483,19 @@
             if (state) {
                 adminContent.classList.remove('hidden');
                 adminPanel.classList.remove('hidden');
-                toggleAdminBtn.textContent = 'Управление (вкл)';
                 renderAdminList();
             } else {
                 adminContent.classList.add('hidden');
                 adminPanel.classList.add('hidden');
-                toggleAdminBtn.textContent = 'Управление';
             }
         }
 
-        toggleAdminBtn.addEventListener('click', () => {
-            if (isAdmin) { setAdmin(false); return; }
-            adminPanel.classList.remove('hidden');
-            if (adminPass.value === 'talk123') setAdmin(true);
-            else alert('Неверный пароль');
-        });
-
         loginAdminBtn.addEventListener('click', () => {
-            if (adminPass.value === 'talk123') setAdmin(true);
-            else alert('Неверный пароль');
+            if (adminPass.value === 'talk123') {
+                setAdmin(true);
+            } else {
+                alert('Неверный пароль');
+            }
         });
 
         logoutAdminBtn.addEventListener('click', () => setAdmin(false));
@@ -556,10 +529,6 @@
             if (confirm('Удалить всё меню?')) { menuItems = []; saveData(); renderAll(); }
         });
 
-        copyLinkBtn.addEventListener('click', () => {
-            navigator.clipboard.writeText(window.location.href).then(() => alert('Ссылка скопирована!'));
-        });
-
         downloadQrBtn.addEventListener('click', () => {
             const canvas = document.querySelector('#qrcode canvas');
             if (canvas) {
@@ -568,6 +537,11 @@
                 link.href = canvas.toDataURL('image/png');
                 link.click();
             }
+        });
+
+        // Нажатие Enter в поле пароля
+        adminPass.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') loginAdminBtn.click();
         });
 
         loadData();
