@@ -431,7 +431,6 @@
 
         let toastTimer = null;
 
-        // === TOAST УВЕДОМЛЕНИЯ ===
         function showToast(message, type = 'info') {
             toast.textContent = message;
             toast.className = 'toast ' + type;
@@ -442,7 +441,7 @@
             }, 4000);
         }
 
-        // === ЗАГРУЗКА МЕНЮ С GITHUB ===
+        // === ЗАГРУЗКА МЕНЮ С GITHUB (ИСПРАВЛЕННАЯ) ===
         async function loadMenuFromGitHub() {
             try {
                 const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
@@ -456,8 +455,15 @@
                     return false;
                 }
                 const data = await response.json();
-                const content = atob(data.content);
-                menuItems = JSON.parse(content);
+                
+                // Правильное декодирование UTF-8 из base64
+                const binaryString = atob(data.content);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                const decodedString = new TextDecoder('utf-8').decode(bytes);
+                menuItems = JSON.parse(decodedString);
                 return true;
             } catch (e) {
                 showToast('Ошибка загрузки меню: ' + e.message, 'error');
@@ -465,7 +471,7 @@
             }
         }
 
-        // === СОХРАНЕНИЕ МЕНЮ НА GITHUB (ИСПРАВЛЕННАЯ ВЕРСИЯ) ===
+        // === СОХРАНЕНИЕ МЕНЮ НА GITHUB ===
         async function saveMenuToGitHub() {
             if (!githubToken) {
                 showToast('Введите GitHub токен в админке', 'error');
@@ -475,7 +481,6 @@
             try {
                 const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
                 
-                // 1. Получаем sha текущего файла
                 const getResponse = await fetch(url, {
                     headers: {
                         'Authorization': `token ${githubToken}`,
@@ -491,7 +496,6 @@
                 const fileData = await getResponse.json();
                 const sha = fileData.sha;
 
-                // 2. Кодируем русский текст в base64 правильно
                 const jsonString = JSON.stringify(menuItems, null, 2);
                 const encoder = new TextEncoder();
                 const data = encoder.encode(jsonString);
@@ -501,7 +505,6 @@
                 });
                 const content = btoa(binary);
 
-                // 3. Отправляем обновление
                 const putResponse = await fetch(url, {
                     method: 'PUT',
                     headers: {
