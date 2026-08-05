@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TALK · Coffee</title>
+    <title>TALK · Кофе</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         * {
@@ -231,7 +231,7 @@
         }
 
         .qr-link {
-            display: none; /* 👈 СКРЫВАЕМ ССЫЛКУ */
+            display: none;
         }
 
         .admin-panel {
@@ -333,10 +333,10 @@
 
     <div class="header">
         <div class="logo">TALK</div>
-        <div class="logo-sub">· coffee ·</div>
+        <div class="logo-sub">· кофе ·</div>
         <div class="header-actions">
-            <button class="btn" id="toggleAdminBtn">Manage</button>
-            <button class="btn" id="copyLinkBtn">Copy link</button>
+            <button class="btn" id="toggleAdminBtn">Управление</button>
+            <button class="btn" id="copyLinkBtn">Копировать ссылку</button>
         </div>
     </div>
 
@@ -347,46 +347,45 @@
     <div class="qr-section">
         <div id="qrcode"></div>
         <div style="text-align:center;">
-            <p style="color:#b5aba0;font-size:0.6rem;letter-spacing:3px;text-transform:uppercase;font-family:'Helvetica Neue',Arial,sans-serif;">Menu QR code</p>
-            <button class="btn" id="downloadQrBtn">Download QR</button>
-            <!-- ССЫЛКА СКРЫТА -->
+            <p style="color:#b5aba0;font-size:0.6rem;letter-spacing:3px;text-transform:uppercase;font-family:'Helvetica Neue',Arial,sans-serif;">QR-код меню</p>
+            <button class="btn" id="downloadQrBtn">Скачать QR</button>
             <p class="qr-link" id="qrLinkDisplay"></p>
         </div>
     </div>
 
     <div id="adminPanel" class="admin-panel hidden">
-        <h2>Menu management</h2>
+        <h2>Управление меню</h2>
         <div class="form-group">
-            <input type="password" id="adminPass" placeholder="Password" value="talk123" />
-            <button class="btn" id="loginAdminBtn">Login</button>
-            <button class="btn btn-danger" id="logoutAdminBtn">Logout</button>
+            <input type="password" id="adminPass" placeholder="Пароль" value="talk123" />
+            <button class="btn" id="loginAdminBtn">Войти</button>
+            <button class="btn btn-danger" id="logoutAdminBtn">Выйти</button>
         </div>
         <div id="adminContent" class="hidden">
             <div class="form-group">
-                <input type="text" id="itemName" placeholder="Item name" />
-                <input type="text" id="itemPrice" placeholder="Price" />
-                <input type="text" id="itemCategory" placeholder="Category" />
+                <input type="text" id="itemName" placeholder="Название" />
+                <input type="text" id="itemPrice" placeholder="Цена" />
+                <input type="text" id="itemCategory" placeholder="Категория" />
             </div>
             <div class="form-group">
-                <textarea id="itemDesc" placeholder="Description"></textarea>
+                <textarea id="itemDesc" placeholder="Описание"></textarea>
             </div>
             <div class="form-group">
                 <input type="file" id="itemImage" accept="image/*" />
             </div>
-            <button class="btn" id="addItemBtn" style="margin-bottom:18px;">+ Add item</button>
+            <button class="btn" id="addItemBtn" style="margin-bottom:18px;">+ Добавить</button>
             <div id="adminItemList"></div>
         </div>
     </div>
 
     <div class="footer-actions">
-        <button class="btn btn-danger" id="resetMenuBtn">Reset menu</button>
+        <button class="btn btn-danger" id="resetMenuBtn">Сбросить меню</button>
     </div>
 </div>
 
 <script>
     (function() {
         let menuItems = [];
-        let currentCategory = 'All';
+        let currentCategory = 'Все';
         let isAdmin = false;
 
         const grid = document.getElementById('menuGrid');
@@ -415,9 +414,9 @@
                 try { menuItems = JSON.parse(stored); } catch(e) { menuItems = []; }
             } else {
                 menuItems = [
-                    { id: Date.now() + 1, name: 'Espresso', price: '150 ₽', category: 'Coffee', desc: 'Classic black', image: '' },
-                    { id: Date.now() + 2, name: 'Cappuccino', price: '220 ₽', category: 'Coffee', desc: 'Smooth with milk', image: '' },
-                    { id: Date.now() + 3, name: 'Croissant', price: '180 ₽', category: 'Pastry', desc: 'Buttery and flaky', image: '' }
+                    { id: Date.now() + 1, name: 'Эспрессо', price: '150 ₽', category: 'Кофе', desc: 'Классический черный', image: '' },
+                    { id: Date.now() + 2, name: 'Капучино', price: '220 ₽', category: 'Кофе', desc: 'Нежный, с молоком', image: '' },
+                    { id: Date.now() + 3, name: 'Круассан', price: '180 ₽', category: 'Выпечка', desc: 'Масляный, хрустящий', image: '' }
                 ];
                 saveData();
             }
@@ -429,7 +428,7 @@
         }
 
         function renderCategories() {
-            const cats = ['All', ...new Set(menuItems.map(i => i.category).filter(Boolean))];
+            const cats = ['Все', ...new Set(menuItems.map(i => i.category).filter(Boolean))];
             categoriesContainer.innerHTML = cats.map(c =>
                 `<span class="category-tag ${c === currentCategory ? 'active' : ''}" data-cat="${c}">${c}</span>`
             ).join('');
@@ -442,18 +441,18 @@
         }
 
         function renderMenu() {
-            const filtered = currentCategory === 'All' ? menuItems : menuItems.filter(i => i.category === currentCategory);
+            const filtered = currentCategory === 'Все' ? menuItems : menuItems.filter(i => i.category === currentCategory);
             if (!filtered.length) {
-                grid.innerHTML = '<p style="text-align:center;color:#c8c0b8;padding:40px;font-family:\'Helvetica Neue\',Arial,sans-serif;letter-spacing:2px;">Menu is empty</p>';
+                grid.innerHTML = '<p style="text-align:center;color:#c8c0b8;padding:40px;font-family:\'Helvetica Neue\',Arial,sans-serif;letter-spacing:2px;">Меню пусто</p>';
                 return;
             }
             grid.innerHTML = filtered.map(item => `
                 <div class="menu-item">
-                    ${item.image ? `<img src="${item.image}" alt="${item.name}" />` : `<div class="no-img">no photo</div>`}
+                    ${item.image ? `<img src="${item.image}" alt="${item.name}" />` : `<div class="no-img">нет фото</div>`}
                     <h3>${item.name}</h3>
                     <div class="price">${item.price}</div>
                     <div class="desc">${item.desc || ''}</div>
-                    <span class="category-badge">${item.category || 'Uncategorized'}</span>
+                    <span class="category-badge">${item.category || 'Без категории'}</span>
                 </div>
             `).join('');
         }
@@ -478,7 +477,6 @@
 
         function renderQR() {
             const url = window.location.href;
-            // Ссылка теперь скрыта, но QR-код всё равно генерируется
             qrLinkDisplay.textContent = url;
             const container = document.getElementById('qrcode');
             container.innerHTML = '';
@@ -506,12 +504,12 @@
             if (state) {
                 adminContent.classList.remove('hidden');
                 adminPanel.classList.remove('hidden');
-                toggleAdminBtn.textContent = 'Manage (on)';
+                toggleAdminBtn.textContent = 'Управление (вкл)';
                 renderAdminList();
             } else {
                 adminContent.classList.add('hidden');
                 adminPanel.classList.add('hidden');
-                toggleAdminBtn.textContent = 'Manage';
+                toggleAdminBtn.textContent = 'Управление';
             }
         }
 
@@ -519,24 +517,24 @@
             if (isAdmin) { setAdmin(false); return; }
             adminPanel.classList.remove('hidden');
             if (adminPass.value === 'talk123') setAdmin(true);
-            else alert('Wrong password');
+            else alert('Неверный пароль');
         });
 
         loginAdminBtn.addEventListener('click', () => {
             if (adminPass.value === 'talk123') setAdmin(true);
-            else alert('Wrong password');
+            else alert('Неверный пароль');
         });
 
         logoutAdminBtn.addEventListener('click', () => setAdmin(false));
 
         addItemBtn.addEventListener('click', () => {
-            if (!isAdmin) return alert('Please login first');
+            if (!isAdmin) return alert('Сначала войдите в управление');
             const name = itemName.value.trim();
             const price = itemPrice.value.trim();
-            const category = itemCategory.value.trim() || 'Uncategorized';
+            const category = itemCategory.value.trim() || 'Без категории';
             const desc = itemDesc.value.trim();
             const file = itemImage.files[0];
-            if (!name || !price) return alert('Name and price are required');
+            if (!name || !price) return alert('Название и цена обязательны');
 
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -555,11 +553,11 @@
         });
 
         resetMenuBtn.addEventListener('click', () => {
-            if (confirm('Delete all menu items?')) { menuItems = []; saveData(); renderAll(); }
+            if (confirm('Удалить всё меню?')) { menuItems = []; saveData(); renderAll(); }
         });
 
         copyLinkBtn.addEventListener('click', () => {
-            navigator.clipboard.writeText(window.location.href).then(() => alert('Link copied!'));
+            navigator.clipboard.writeText(window.location.href).then(() => alert('Ссылка скопирована!'));
         });
 
         downloadQrBtn.addEventListener('click', () => {
