@@ -361,7 +361,6 @@
             <button class="btn btn-danger" id="logoutAdminBtn">Выйти</button>
         </div>
         <div id="adminContent" class="hidden">
-            <!-- Токен GitHub (вводится один раз) -->
             <div class="form-group" style="margin-bottom:15px;">
                 <input type="password" id="githubToken" placeholder="GitHub токен (введите один раз)" style="flex:2;" />
                 <button class="btn" id="saveTokenBtn">Сохранить токен</button>
@@ -436,7 +435,6 @@
         function showToast(message, type = 'info') {
             toast.textContent = message;
             toast.className = 'toast ' + type;
-            // Небольшая задержка перед показом, чтобы анимация сработала
             setTimeout(() => { toast.classList.add('show'); }, 10);
             clearTimeout(toastTimer);
             toastTimer = setTimeout(() => {
@@ -467,7 +465,7 @@
             }
         }
 
-        // === СОХРАНЕНИЕ МЕНЮ НА GITHUB ===
+        // === СОХРАНЕНИЕ МЕНЮ НА GITHUB (ИСПРАВЛЕННАЯ ВЕРСИЯ) ===
         async function saveMenuToGitHub() {
             if (!githubToken) {
                 showToast('Введите GitHub токен в админке', 'error');
@@ -475,8 +473,9 @@
             }
 
             try {
-                // Сначала получаем sha текущего файла
                 const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
+                
+                // 1. Получаем sha текущего файла
                 const getResponse = await fetch(url, {
                     headers: {
                         'Authorization': `token ${githubToken}`,
@@ -492,10 +491,17 @@
                 const fileData = await getResponse.json();
                 const sha = fileData.sha;
 
-                // Подготавливаем новое содержимое
-                const content = btoa(JSON.stringify(menuItems, null, 2));
+                // 2. Кодируем русский текст в base64 правильно
+                const jsonString = JSON.stringify(menuItems, null, 2);
+                const encoder = new TextEncoder();
+                const data = encoder.encode(jsonString);
+                let binary = '';
+                data.forEach(byte => {
+                    binary += String.fromCharCode(byte);
+                });
+                const content = btoa(binary);
 
-                // Отправляем обновление
+                // 3. Отправляем обновление
                 const putResponse = await fetch(url, {
                     method: 'PUT',
                     headers: {
@@ -619,7 +625,6 @@
 
         // === СОБЫТИЯ ===
 
-        // Двойной клик по логотипу
         logoTrigger.addEventListener('dblclick', function(e) {
             e.preventDefault();
             adminPanel.classList.remove('hidden');
@@ -629,7 +634,6 @@
             }
         });
 
-        // Вход
         loginAdminBtn.addEventListener('click', () => {
             if (adminPass.value === 'talk123') {
                 setAdmin(true);
@@ -638,10 +642,8 @@
             }
         });
 
-        // Выход
         logoutAdminBtn.addEventListener('click', () => setAdmin(false));
 
-        // Сохранение токена
         saveTokenBtn.addEventListener('click', () => {
             const token = githubTokenInput.value.trim();
             if (token.startsWith('ghp_') && token.length > 30) {
@@ -653,7 +655,6 @@
             }
         });
 
-        // Добавление позиции
         addItemBtn.addEventListener('click', async () => {
             if (!isAdmin) {
                 showToast('Сначала войдите в управление', 'error');
@@ -694,7 +695,6 @@
                         itemName.value = ''; itemPrice.value = ''; itemCategory.value = ''; itemDesc.value = ''; itemImage.value = '';
                         renderAll();
                     } else {
-                        // Если сохранение не удалось — убираем добавленный элемент
                         menuItems.pop();
                         renderAll();
                     }
@@ -713,12 +713,10 @@
             }
         });
 
-        // Enter в поле пароля
         adminPass.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') loginAdminBtn.click();
         });
 
-        // Сброс меню
         resetMenuBtn.addEventListener('click', async () => {
             if (!isAdmin) { showToast('Сначала войдите в управление', 'error'); return; }
             if (!confirm('Удалить ВСЁ меню?')) return;
@@ -728,7 +726,6 @@
             showToast('Меню очищено', 'info');
         });
 
-        // Скачать QR
         downloadQrBtn.addEventListener('click', () => {
             const canvas = document.querySelector('#qrcode canvas');
             if (canvas) {
@@ -754,7 +751,6 @@
             renderQR();
         }
 
-        // Восстанавливаем токен из localStorage
         if (githubToken) {
             githubTokenInput.value = githubToken;
         }
